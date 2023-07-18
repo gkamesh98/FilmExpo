@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import {
   View,
   ActivityIndicator,
@@ -65,6 +65,7 @@ const styles = StyleSheet.create({
 });
 
 const App = (props) => {
+  const [scrollEnabled, setScrollEnabled] = useState(true);
   const { data, loading, error, fetchMore } = useQuery(CHAPTERS_QUERY);
   const scrollX = useRef(new Animated.Value(0)).current;
   const { width } = useWindowDimensions();
@@ -92,6 +93,7 @@ const App = (props) => {
       style={styles.container}
     >
       <Animated.FlatList
+        scrollEnabled={scrollEnabled}
         onEndReached={() => {
           fetchMore({
             variables: {
@@ -135,6 +137,12 @@ const App = (props) => {
                   releaseDate={item.node.releaseDate}
                   title={item.node.title}
                   imageSource={imageSource(item.node.title)}
+                  onZoomOperationEnd={() => {
+                    setScrollEnabled(true);
+                  }}
+                  onZoomOperationStart={() => {
+                    setScrollEnabled(false);
+                  }}
                 />
               </Animated.View>
               {Boolean(index === movies.length - 1) && (

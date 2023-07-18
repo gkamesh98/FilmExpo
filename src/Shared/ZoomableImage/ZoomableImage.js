@@ -1,5 +1,5 @@
-import React, { useState, useRef, createRef } from "react";
-import { View, Text, Image, Animated, Dimensions } from "react-native";
+import React, { useState, useRef } from "react";
+import { Animated } from "react-native";
 import {
   GestureHandlerRootView,
   PanGestureHandler,
@@ -7,15 +7,19 @@ import {
   State,
 } from "react-native-gesture-handler";
 
-const ZoomableImage = ({ imageSource }) => {
+const ZoomableImage = ({
+  imageSource,
+  onZoomOperationStart,
+  onZoomOperationEnd,
+}) => {
   const [panEnabled, setPanEnabled] = useState(false);
 
   const scale = useRef(new Animated.Value(1)).current;
   const translateX = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(0)).current;
 
-  const pinchRef = createRef();
-  const panRef = createRef();
+  const pinchRef = useRef();
+  const panRef = useRef();
 
   const onPinchEvent = Animated.event(
     [
@@ -40,9 +44,10 @@ const ZoomableImage = ({ imageSource }) => {
 
   const handlePinchStateChange = ({ nativeEvent }) => {
     // enabled pan only after pinch-zoom
-    if (nativeEvent.state === State.ACTIVE) {
+    if (nativeEvent.state === State.ACTIVE || State.BEGAN === nativeEvent.state) {
       setPanEnabled(true);
     }
+
 
     // when scale < 1, reset scale back to original (1)
     const nScale = nativeEvent.scale;
@@ -72,6 +77,18 @@ const ZoomableImage = ({ imageSource }) => {
     setPanEnabled(false);
   };
 
+  const handlePanStateChange = ({ nativeEvent }) => {
+    if (nativeEvent.state === State.ACTIVE || State.BEGAN === nativeEvent.state) {
+      onZoomOperationStart()
+    }
+
+    if (
+      [State.CANCELLED, State.END, State.FAILED].includes(nativeEvent.state)
+    ) {
+      onZoomOperationEnd()
+    }
+  }
+
   return (
     <GestureHandlerRootView style={{ width: "100%" }}>
       <PanGestureHandler
@@ -81,6 +98,7 @@ const ZoomableImage = ({ imageSource }) => {
         enabled={panEnabled}
         failOffsetX={[-1000, 1000]}
         shouldCancelWhenOutside
+        onHandlerStateChange={handlePanStateChange}
       >
         <Animated.View>
           <PinchGestureHandler
@@ -106,6 +124,11 @@ const ZoomableImage = ({ imageSource }) => {
       </PanGestureHandler>
     </GestureHandlerRootView>
   );
+};
+
+ZoomableImage.defaultProps = {
+  onZoomOperationStart: () => {},
+  onZoomOperationEnd: () => {},
 };
 
 export default ZoomableImage;

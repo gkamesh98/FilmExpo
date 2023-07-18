@@ -1,20 +1,28 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import React from 'react'
 
-export default function App() {
+import { ApolloClient, InMemoryCache, ApolloProvider } from '@apollo/client';
+import { relayStylePagination } from "@apollo/client/utilities";
+
+import App from './src/App';
+
+// Initialize Apollo Client
+const client = new ApolloClient({
+  uri: 'https://swapi-graphql.netlify.app/.netlify/functions/index',
+  cache: new InMemoryCache({
+    typePolicies: {
+      Query: {
+        fields: {
+          allFilms: relayStylePagination()
+        },
+      },
+    },
+  })
+});
+
+export default function AppRoot() {
   return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <ApolloProvider client={client}>
+      <App />
+    </ApolloProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
